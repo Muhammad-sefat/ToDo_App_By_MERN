@@ -25,6 +25,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/tasks", require("./routes/taskRoutes"));
 
 app.get("/", (req, res) => {
   res.send("ToDo_App Backend is Running...");
