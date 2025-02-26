@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { registerUser } from "../api/auth";
+import { registerUser, googleLogin, setupTwoFactor } from "../api/auth";
 import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
@@ -8,6 +8,7 @@ const Register = () => {
     email: "",
     password: "",
   });
+  const [qrCode, setQrCode] = useState(null);
   const navigate = useNavigate();
 
   const handleChange = (e) =>
@@ -16,8 +17,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await registerUser(formData);
-      alert("Registered successfully");
+      // Register user
+      const res = await registerUser(formData);
+      const userId = res.data.userId;
+
+      // Setup 2FA
+      const qrRes = await setupTwoFactor(userId);
+      setQrCode(qrRes.data.qrCode);
+
+      alert("Registered successfully. Scan the QR code to enable 2FA.");
       navigate("/main-todo");
     } catch (err) {
       alert("Registration failed");
@@ -37,7 +45,7 @@ const Register = () => {
             placeholder="Name"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff] "
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
           />
           <input
             type="email"
@@ -45,7 +53,7 @@ const Register = () => {
             placeholder="Email"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff] "
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
           />
           <input
             type="password"
@@ -53,7 +61,7 @@ const Register = () => {
             placeholder="Password"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff] "
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
           />
           <button
             type="submit"
@@ -61,7 +69,17 @@ const Register = () => {
           >
             Register
           </button>
+          <button
+            type="button"
+            onClick={googleLogin}
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition duration-300 mt-2"
+          >
+            Register with Google
+          </button>
         </form>
+        {qrCode && (
+          <img src={qrCode} alt="Scan QR for 2FA" className="mt-4 mx-auto" />
+        )}
         <p className="text-white text-center mt-4">
           Already have an account?{" "}
           <Link to="/" className="text-pink-300 hover:underline">
