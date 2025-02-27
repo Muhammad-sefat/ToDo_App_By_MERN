@@ -45,6 +45,7 @@ const MainToDo = () => {
     try {
       const addedTask = await createTask(newTask);
       dispatch(addTask(addedTask));
+      setTaskData({ title: "", description: "", priority: "Medium" });
       alert("Task added successfully!");
     } catch (error) {
       alert("Error adding task!");
