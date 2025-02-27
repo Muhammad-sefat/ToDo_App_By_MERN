@@ -3,9 +3,11 @@ import { useSelector, useDispatch } from "react-redux";
 import { setTasks, updateTaskState, deleteTaskState } from "../redux/taskSlice";
 import { getTasks, updateTask, removeTask } from "../api/taskApi";
 import { FaTrash, FaCheckCircle, FaHourglassHalf } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const tasks = useSelector((state) => state.tasks.tasks);
   const user = useSelector((state) => state.user?.user);
 
@@ -55,7 +57,19 @@ const Dashboard = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      <h2 className="text-3xl font-bold mb-4">📌 Your Tasks</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-4xl font-extrabold text-gray-800 relative">
+          📌 Your Tasks
+          <span className="block w-16 h-1 bg-blue-500 absolute -bottom-1 left-1"></span>
+        </h2>
+
+        <button
+          onClick={() => navigate("/main-todo")}
+          className="px-5 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-all duration-300 transform hover:scale-105"
+        >
+          🔙 Back to Add Task
+        </button>
+      </div>
 
       {/* Filter Section */}
       <div className="flex gap-4 mb-6">
