@@ -3,9 +3,9 @@ const Task = require("../models/task");
 // Create Task
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, dueDate, status, priority } = req.body;
+    const { title, description, dueDate, status, priority, email } = req.body;
     const task = new Task({
-      userId: req.user.id,
+      email,
       title,
       description,
       dueDate,
@@ -22,7 +22,12 @@ exports.createTask = async (req, res) => {
 // Get All Tasks for Logged-in User
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ userId: req.user.id });
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const tasks = await Task.find({ email });
     res.status(200).json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });

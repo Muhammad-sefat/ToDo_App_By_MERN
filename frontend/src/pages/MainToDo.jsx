@@ -1,27 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTasks, addTask, deleteTask } from "../redux/taskSlice";
-import { motion } from "framer-motion";
-import {
-  Trash2,
-  Clock,
-  CheckCircle,
-  Flag,
-  LogOut,
-  LayoutDashboard,
-} from "lucide-react";
+import { setTasks, addTask } from "../redux/taskSlice";
+import { getTasks, createTask } from "../api/taskApi";
 import { useNavigate } from "react-router-dom";
+import { LogOut, LayoutDashboard } from "lucide-react";
 import { logoutUser } from "../api/auth";
 
 const MainToDo = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { tasks, loading } = useSelector((state) => state.tasks);
   const user = useSelector((state) => state.user?.user);
-  console.log(user);
-  if (!user) {
-    return <p>Loading...</p>;
-  }
 
   const [taskData, setTaskData] = useState({
     title: "",
@@ -30,26 +18,37 @@ const MainToDo = () => {
   });
 
   useEffect(() => {
-    if (!user) {
-      fetchCurrentUser(dispatch);
+    if (user?.email) {
+      const fetchData = async () => {
+        const data = await getTasks(user.email);
+        console.log(data);
+        dispatch(setTasks(data));
+      };
+      fetchData();
     }
-  }, [user, dispatch]);
+  }, [dispatch, user?.email]);
 
   const handleChange = (e) => {
     setTaskData({ ...taskData, [e.target.name]: e.target.value });
   };
 
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!taskData.title.trim() || !taskData.description.trim()) return;
+
     const newTask = {
       ...taskData,
       status: "Pending",
       email: user.email,
       dueDate: new Date().toISOString(),
     };
-    dispatch(addTask(newTask));
-    setTaskData({ title: "", description: "", priority: "Medium" });
+    try {
+      const addedTask = await createTask(newTask);
+      dispatch(addTask(addedTask));
+      alert("Task added successfully!");
+    } catch (error) {
+      alert("Error adding task!");
+    }
   };
 
   const handleLogout = () => {
@@ -62,7 +61,7 @@ const MainToDo = () => {
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800">
-            📋 Hello,{user?.name} !
+            📋 Hello, {user?.name}!
           </h2>
           <div className="flex space-x-4">
             <button
@@ -118,49 +117,6 @@ const MainToDo = () => {
             ➕ Add Task
           </button>
         </form>
-
-        {/* Task List */}
-        {loading ? (
-          <p className="text-center text-gray-600">Loading tasks...</p>
-        ) : (
-          <div className="space-y-4">
-            {tasks.map((task) => (
-              <motion.div
-                key={task._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500"
-              >
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {task.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm">{task.description}</p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold text-yellow-600 bg-yellow-100">
-                      <CheckCircle className="inline w-4 h-4 mr-1" />{" "}
-                      {task.status}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold text-red-600 bg-red-100">
-                      <Flag className="inline w-4 h-4 mr-1" /> {task.priority}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold text-gray-600 bg-gray-200">
-                      <Clock className="inline w-4 h-4 mr-1" />
-                      {new Date(task.dueDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => dispatch(deleteTask(task._id))}
-                  className="text-red-500 hover:text-red-700 transition"
-                >
-                  <Trash2 className="w-6 h-6" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
