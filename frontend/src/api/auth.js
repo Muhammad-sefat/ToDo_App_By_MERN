@@ -1,26 +1,58 @@
 import axios from "axios";
+import { loginSuccess, logout } from "../redux/userSlice";
 
 const API_URL = "http://localhost:5000/api/auth";
 
 // register user
-export const registerUser = async (userData) => {
-  return axios.post(`${API_URL}/register`, userData);
+export const registerUser = (userData) => async (dispatch) => {
+  try {
+    const res = await axios.post(`${API_URL}/register`, userData);
+    dispatch(loginSuccess({ user: res.data.user, token: res.data.token }));
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 // login user
-export const loginUser = async (userData) => {
-  return axios.post(`${API_URL}/login`, userData);
-};
-// Setup Two-Factor Authentication (2FA)
-export const setupTwoFactor = async (userId) => {
-  return axios.post(`${API_URL}/setup-2fa`, { userId });
-};
-
-// Verify 2FA Code
-export const verifyTwoFactor = async (userId, token) => {
-  return axios.post(`${API_URL}/verify-2fa`, { userId, token });
+export const loginUser = (userData) => async (dispatch) => {
+  try {
+    const res = await axios.post(`${API_URL}/login`, userData);
+    dispatch(loginSuccess({ user: res.data.user, token: res.data.token }));
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
+// google sign up
 export const googleLogin = () => {
-  window.location.href = `${API_URL}/google`;
+  window.open(`${API_URL}/google`, "_self");
+};
+
+// Fetch user after Google login
+export const fetchCurrentUser = async (dispatch) => {
+  try {
+    const token = localStorage.getItem("token");
+    console.log("Retrieved Token:", token);
+
+    if (!token) {
+      console.error("No token found!");
+      return;
+    }
+
+    const res = await axios.get("http://localhost:5000/api/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    console.log("Fetched User Data:", res.data);
+    dispatch(loginSuccess({ user: res.data.user, token }));
+  } catch (error) {
+    console.error("Failed to fetch user:", error.response?.data || error);
+  }
+};
+
+// Logout user
+export const logoutUser = (dispatch) => {
+  dispatch(logout());
 };

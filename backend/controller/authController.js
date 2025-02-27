@@ -1,7 +1,7 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
+const jwt = require("../utils/jsonwebtoken");
 const passport = require("passport");
-const jwt = require("jsonwebtoken");
 const { generateToken } = require("../utils/jsonwebtoken");
 const nodemailer = require("nodemailer");
 
@@ -12,14 +12,28 @@ exports.register = async (req, res) => {
 
     if (user) return res.status(400).json({ msg: "User already exists" });
 
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Create new user
     user = new User({ name, email, password: hashedPassword });
-
     await user.save();
-    res.status(201).json({ msg: "User registered successfully" });
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    // Send response without password
+    res.status(201).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      token,
+    });
   } catch (error) {
+    console.error("Registration Error:", error);
     res.status(500).json({ msg: "Server error" });
   }
 };
@@ -31,12 +45,24 @@ exports.login = async (req, res) => {
 
     if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
 
+    // Generate token
     const token = generateToken(user._id);
-    res.json({ token });
+
+    // Send response without password
+    res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      token,
+    });
   } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ msg: "Server error" });
   }
 };
@@ -52,56 +78,35 @@ exports.googleAuthCallback = (req, res, next) => {
     if (err || !user) {
       return res.redirect("http://localhost:5173");
     }
-
     // Generate JWT Token
     const token = generateToken(user._id);
 
-    // Redirect with Token
-    res.redirect(`http://localhost:5173/main-todo?token=${token}`);
+    // Convert user object to a JSON string and encode it
+    const userData = encodeURIComponent(
+      JSON.stringify({ id: user._id, name: user.name, email: user.email })
+    );
+
+    // Send token in the URL instead of cookies
+    res.redirect(`http://localhost:5173/?token=${token}&user=${userData}`);
   })(req, res, next);
 };
 
-// **Setup Two-Factor Authentication (2FA)**
-exports.setupTwoFactorAuth = async (req, res) => {
+// send the current user
+exports.getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.body.userId);
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+    console.log("Received Token in Backend:", token);
+    if (!token) return res.status(401).json({ message: "Unauthorized" });
 
-    const secret = speakeasy.generateSecret();
-    user.twoFactorSecret = secret.base32;
-    user.isTwoFactorEnabled = true;
-    await user.save();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded Token:", decoded);
+    const user = await User.findById(decoded.id).select("-password");
 
-    qrcode.toDataURL(secret.otpauth_url, (err, qrCode) => {
-      if (err) return res.status(500).json({ msg: "Error generating QR Code" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-      res.json({ qrCode, secret: secret.base32 });
-    });
+    res.json({ user, token });
   } catch (error) {
-    res.status(500).json({ msg: "Server error" });
-  }
-};
-
-// **Verify Two-Factor Authentication (2FA)**
-exports.verifyTwoFactorAuth = async (req, res) => {
-  try {
-    const { userId, token } = req.body;
-    const user = await User.findById(userId);
-
-    if (!user || !user.twoFactorSecret)
-      return res.status(400).json({ msg: "2FA not set up" });
-
-    const verified = speakeasy.totp.verify({
-      secret: user.twoFactorSecret,
-      encoding: "base32",
-      token,
-      window: 1,
-    });
-
-    if (!verified) return res.status(400).json({ msg: "Invalid 2FA code" });
-
-    res.json({ msg: "2FA verified" });
-  } catch (error) {
-    res.status(500).json({ msg: "Server error" });
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

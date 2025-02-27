@@ -4,8 +4,7 @@ const {
   login,
   googleAuth,
   googleAuthCallback,
-  setupTwoFactorAuth,
-  verifyTwoFactorAuth,
+  getCurrentUser,
 } = require("../controller/authController");
 
 const router = express.Router();
@@ -16,9 +15,6 @@ router.post("/login", login);
 // **Google OAuth**
 router.get("/google", googleAuth);
 router.get("/google/callback", googleAuthCallback);
-
-// **Two-Factor Authentication (2FA)**
-router.post("/setup-2fa", setupTwoFactorAuth);
-router.post("/verify-2fa", verifyTwoFactorAuth);
+router.get("/me", getCurrentUser);
 
 module.exports = router;

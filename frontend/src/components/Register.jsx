@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { registerUser, googleLogin, setupTwoFactor } from "../api/auth";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { registerUser, googleLogin, fetchCurrentUser } from "../api/auth";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../redux/userSlice";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -8,8 +10,42 @@ const Register = () => {
     email: "",
     password: "",
   });
-  const [qrCode, setQrCode] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Extract token and user data from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    const userDataEncoded = urlParams.get("user");
+
+    if (token && userDataEncoded) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userDataEncoded));
+        console.log("Decoded User Data:", userData);
+
+        // Save to localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        // Update Redux state
+        dispatch(loginSuccess({ user: userData, token }));
+
+        // Fetch current user from backend (optional)
+        fetchCurrentUser(dispatch)
+          .then(() => {
+            navigate("/main-todo", { replace: true });
+          })
+          .catch((error) => {
+            console.error("fetchCurrentUser failed:", error);
+            navigate("/");
+          });
+      } catch (error) {
+        console.error("Error decoding user data:", error);
+      }
+    }
+  }, [dispatch, location, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,15 +53,8 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Register user
-      const res = await registerUser(formData);
-      const userId = res.data.userId;
-
-      // Setup 2FA
-      const qrRes = await setupTwoFactor(userId);
-      setQrCode(qrRes.data.qrCode);
-
-      alert("Registered successfully. Scan the QR code to enable 2FA.");
+      await dispatch(registerUser(formData));
+      alert("Registered successfully");
       navigate("/main-todo");
     } catch (err) {
       alert("Registration failed");
@@ -77,9 +106,6 @@ const Register = () => {
             Register with Google
           </button>
         </form>
-        {qrCode && (
-          <img src={qrCode} alt="Scan QR for 2FA" className="mt-4 mx-auto" />
-        )}
         <p className="text-white text-center mt-4">
           Already have an account?{" "}
           <Link to="/" className="text-pink-300 hover:underline">

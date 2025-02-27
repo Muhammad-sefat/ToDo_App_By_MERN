@@ -6,8 +6,6 @@ const userSchema = new mongoose.Schema({
   password: { type: String },
   googleId: { type: String, unique: true, sparse: true },
   isVerified: { type: Boolean, default: false },
-  isTwoFactorEnabled: { type: Boolean, default: false },
-  twoFactorSecret: { type: String },
 });
 
 module.exports = mongoose.model("User", userSchema);
