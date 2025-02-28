@@ -1,7 +1,7 @@
 import axios from "axios";
 import { loginSuccess, logout } from "../redux/userSlice";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://todoapp-backend-sandy.vercel.app/api/auth";
 
 // register user
 export const registerUser = (userData) => async (dispatch) => {
@@ -41,9 +41,12 @@ export const fetchCurrentUser = async (dispatch) => {
       return;
     }
 
-    const res = await axios.get("http://localhost:5000/api/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await axios.get(
+      "https://todoapp-backend-sandy.vercel.app/api/auth/me",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     dispatch(
       loginSuccess({
