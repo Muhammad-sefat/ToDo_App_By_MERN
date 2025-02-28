@@ -12,6 +12,7 @@ const taskSchema = new mongoose.Schema(
       default: "Pending",
     },
     priority: { type: String, enum: ["High", "Medium", "Low"], required: true },
+    googleEventId: { type: String },
   },
   { timestamps: true }
 );

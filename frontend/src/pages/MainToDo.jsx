@@ -21,7 +21,6 @@ const MainToDo = () => {
     if (user?.email) {
       const fetchData = async () => {
         const data = await getTasks(user.email);
-        console.log(data);
         dispatch(setTasks(data));
       };
       fetchData();
@@ -43,7 +42,7 @@ const MainToDo = () => {
       dueDate: new Date().toISOString(),
     };
     try {
-      const addedTask = await createTask(newTask);
+      const addedTask = await createTask(newTask, user.googleAccessToken);
       dispatch(addTask(addedTask));
       setTaskData({ title: "", description: "", priority: "Medium" });
       alert("Task added successfully!");

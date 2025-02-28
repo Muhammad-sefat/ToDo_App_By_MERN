@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { registerUser, googleLogin, fetchCurrentUser } from "../api/auth";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { registerUser, googleLogin } from "../api/auth";
+import { useNavigate, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../redux/userSlice";
+
+import useHandleAuthRedirect from "../hooks/useHandleAuthRedirect";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,40 +13,8 @@ const Register = () => {
   });
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
 
-  useEffect(() => {
-    // Extract token and user data from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const userDataEncoded = urlParams.get("user");
-
-    if (token && userDataEncoded) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(userDataEncoded));
-        console.log("Decoded User Data:", userData);
-
-        // Save to localStorage
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
-
-        // Update Redux state
-        dispatch(loginSuccess({ user: userData, token }));
-
-        // Fetch current user from backend (optional)
-        fetchCurrentUser(dispatch)
-          .then(() => {
-            navigate("/main-todo", { replace: true });
-          })
-          .catch((error) => {
-            console.error("fetchCurrentUser failed:", error);
-            navigate("/");
-          });
-      } catch (error) {
-        console.error("Error decoding user data:", error);
-      }
-    }
-  }, [dispatch, location, navigate]);
+  useHandleAuthRedirect();
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,6 +24,7 @@ const Register = () => {
     try {
       await dispatch(registerUser(formData));
       alert("Registered successfully");
+
       navigate("/main-todo");
     } catch (err) {
       alert("Registration failed");
@@ -74,7 +44,7 @@ const Register = () => {
             placeholder="Name"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#d9c0e0]"
           />
           <input
             type="email"
@@ -82,7 +52,7 @@ const Register = () => {
             placeholder="Email"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#d9c0e0]"
           />
           <input
             type="password"
@@ -90,7 +60,7 @@ const Register = () => {
             placeholder="Password"
             onChange={handleChange}
             required
-            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#c800ff]"
+            className="w-full p-3 rounded-lg bg-white/30 text-white placeholder-white focus:outline-none focus:ring-2 focus:ring-[#d9c0e0]"
           />
           <button
             type="submit"
@@ -98,6 +68,7 @@ const Register = () => {
           >
             Register
           </button>
+
           <button
             type="button"
             onClick={googleLogin}
@@ -106,6 +77,11 @@ const Register = () => {
             Register with Google
           </button>
         </form>
+        {/* {qrCode && (
+          <div className="mt-4">
+            <img src={qrCode} alt="Google Authenticator QR Code" />
+          </div>
+        )} */}
         <p className="text-white text-center mt-4">
           Already have an account?{" "}
           <Link to="/" className="text-pink-300 hover:underline">

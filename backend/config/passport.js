@@ -8,6 +8,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:5000/api/auth/google/callback",
+      accessType: "offline",
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -22,8 +23,11 @@ passport.use(
           });
           await user.save();
         }
-
-        done(null, user);
+        // Pass the tokens in the info object
+        done(null, user, {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
       } catch (error) {
         done(error, null);
       }

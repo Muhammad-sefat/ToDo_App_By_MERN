@@ -1,47 +1,16 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { loginUser, googleLogin, fetchCurrentUser } from "../api/auth";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../redux/userSlice";
+
+import useHandleAuthRedirect from "../hooks/useHandleAuthRedirect";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation();
 
-  useEffect(() => {
-    // Extract token and user data from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
-    const userDataEncoded = urlParams.get("user");
-
-    if (token && userDataEncoded) {
-      try {
-        const userData = JSON.parse(decodeURIComponent(userDataEncoded));
-        console.log("Decoded User Data:", userData);
-
-        // Save to localStorage
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
-
-        // Update Redux state
-        dispatch(loginSuccess({ user: userData, token }));
-
-        // Fetch current user from backend (optional)
-        fetchCurrentUser(dispatch)
-          .then(() => {
-            navigate("/main-todo", { replace: true });
-          })
-          .catch((error) => {
-            console.error("fetchCurrentUser failed:", error);
-            navigate("/");
-          });
-      } catch (error) {
-        console.error("Error decoding user data:", error);
-      }
-    }
-  }, [dispatch, location, navigate]);
+  useHandleAuthRedirect();
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });

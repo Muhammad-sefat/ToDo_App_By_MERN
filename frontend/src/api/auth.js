@@ -34,7 +34,7 @@ export const googleLogin = () => {
 export const fetchCurrentUser = async (dispatch) => {
   try {
     const token = localStorage.getItem("token");
-    console.log("Retrieved Token:", token);
+    const googleAccessToken = localStorage.getItem("googleAccessToken");
 
     if (!token) {
       console.error("No token found!");
@@ -45,8 +45,12 @@ export const fetchCurrentUser = async (dispatch) => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    console.log("Fetched User Data:", res.data);
-    dispatch(loginSuccess({ user: res.data.user, token }));
+    dispatch(
+      loginSuccess({
+        user: { ...res.data.user, googleAccessToken: googleAccessToken },
+        token,
+      })
+    );
   } catch (error) {
     console.error("Failed to fetch user:", error.response?.data || error);
   }

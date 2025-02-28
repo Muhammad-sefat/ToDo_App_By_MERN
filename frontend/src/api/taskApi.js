@@ -9,10 +9,17 @@ export const getTasks = async (email) => {
   return response.data;
 };
 
-export const createTask = async (newTask) => {
-  const response = await axios.post(API_URL, newTask, {
-    withCredentials: true,
-  });
+export const createTask = async (newTask, googleAccessToken) => {
+  const response = await axios.post(
+    API_URL,
+    {
+      ...newTask,
+      googleAccessToken: googleAccessToken,
+    },
+    {
+      withCredentials: true,
+    }
+  );
   return response.data;
 };
 

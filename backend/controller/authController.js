@@ -1,9 +1,23 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
-const jwt = require("../utils/jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { generateToken } = require("../utils/jsonwebtoken");
-const nodemailer = require("nodemailer");
+const speakeasy = require("speakeasy");
+const QRCode = require("qrcode");
+
+// Promisify QRCode.toDataURL
+// const generateQRCode = (otpauth_url) => {
+//   return new Promise((resolve, reject) => {
+//     QRCode.toDataURL(otpauth_url, (err, data_url) => {
+//       if (err) {
+//         reject(err);
+//       } else {
+//         resolve(data_url);
+//       }
+//     });
+//   });
+// };
 
 exports.register = async (req, res) => {
   try {
@@ -16,14 +30,25 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate Google Authenticator Secret Key
+    const secret = speakeasy.generateSecret({ name: `TodoApp (${email})` });
+
     // Create new user
-    user = new User({ name, email, password: hashedPassword });
+    user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      twoFASecret: secret.base32,
+    });
     await user.save();
 
     // Generate token
     const token = generateToken(user._id);
 
-    // Send response without password
+    // Generate QR Code for Google Authenticator
+    const data_url = await generateQRCode(secret.otpauth_url);
+
+    // Send user data and QR code
     res.status(201).json({
       user: {
         _id: user._id,
@@ -31,6 +56,7 @@ exports.register = async (req, res) => {
         email: user.email,
       },
       token,
+      qrCode: data_url,
     });
   } catch (error) {
     console.error("Registration Error:", error);
@@ -74,32 +100,36 @@ exports.googleAuth = passport.authenticate("google", {
 
 // **Google OAuth Callback (Fixed)**
 exports.googleAuthCallback = (req, res, next) => {
-  passport.authenticate("google", { session: false }, async (err, user) => {
-    if (err || !user) {
-      return res.redirect("http://localhost:5173");
+  passport.authenticate(
+    "google",
+    { session: false },
+    async (err, user, info) => {
+      if (err || !user) {
+        return res.redirect("http://localhost:5173");
+      }
+      // Generate JWT Token
+      const token = generateToken(user._id);
+
+      // Convert user object to a JSON string and encode it
+      const userData = encodeURIComponent(
+        JSON.stringify({ id: user._id, name: user.name, email: user.email })
+      );
+
+      // Send token in the URL instead of cookies
+      res.redirect(
+        `http://localhost:5173/?token=${token}&user=${userData}&googleAccessToken=${info.access_token}&googleRefreshToken=${info.refresh_token}`
+      );
     }
-    // Generate JWT Token
-    const token = generateToken(user._id);
-
-    // Convert user object to a JSON string and encode it
-    const userData = encodeURIComponent(
-      JSON.stringify({ id: user._id, name: user.name, email: user.email })
-    );
-
-    // Send token in the URL instead of cookies
-    res.redirect(`http://localhost:5173/?token=${token}&user=${userData}`);
-  })(req, res, next);
+  )(req, res, next);
 };
 
 // send the current user
 exports.getCurrentUser = async (req, res) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
-    console.log("Received Token in Backend:", token);
     if (!token) return res.status(401).json({ message: "Unauthorized" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded Token:", decoded);
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) return res.status(404).json({ message: "User not found" });
