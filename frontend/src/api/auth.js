@@ -1,7 +1,7 @@
 import axios from "axios";
 import { loginSuccess, logout } from "../redux/userSlice";
 
-const API_URL = "https://todoapp-backend-sandy.vercel.app/api/auth";
+const API_URL = "http://localhost:5000/api/auth";
 
 // register user
 export const registerUser = (userData) => async (dispatch) => {

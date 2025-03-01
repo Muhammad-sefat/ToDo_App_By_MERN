@@ -31,40 +31,6 @@ exports.createTask = async (req, res) => {
       priority,
     });
 
-    // If Google tokens are available, add to Google Calendar
-    // if (googleAccessToken) {
-    //   const oAuth2Client = new OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
-    //   oAuth2Client.setCredentials({
-    //     access_token: googleAccessToken,
-    //   });
-
-    //   const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
-
-    //   const event = {
-    //     summary: title,
-    //     description: description,
-    //     start: {
-    //       dateTime: dueDate,
-    //     },
-    //     end: {
-    //       dateTime: dueDate,
-    //     },
-    //   };
-
-    //   try {
-    //     const calendarRes = await calendar.events.insert({
-    //       calendarId: "primary",
-    //       requestBody: event,
-    //     });
-
-    //     task.googleEventId = calendarRes.data.id;
-    //   } catch (calendarError) {
-    //     console.error("Error creating Google Calendar event:", calendarError);
-    //   }
-    // } else {
-    //   console.log("Google access token not found, skipping calendar addition.");
-    // }
-
     await task.save();
     res.status(201).json(task);
   } catch (err) {
