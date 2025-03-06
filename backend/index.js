@@ -2,21 +2,24 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const passport = require("passport");
+const app = express();
 const connectDB = require("./config/db");
 const cors = require("cors");
-
+const authRoute = require("./routes/authRoutes");
+const taskRoute = require("./routes/taskRoutes");
 require("./config/passport");
+const PORT = process.env.PORT || 5000;
 
-const app = express();
-connectDB();
-
+// Middleware
+const corsOptions = {
+  origin: ["https://todoapp-frontend-chi.vercel.app", "http://localhost:5173"],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "*",
-    credentials: true,
-  })
-);
+
+connectDB();
 
 // Session Middleware
 app.use(
@@ -29,13 +32,12 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/tasks", require("./routes/taskRoutes"));
+// call route
+app.use("/api/auth", authRoute);
+app.use("/api/tasks", taskRoute);
 
 app.get("/", (req, res) => {
   res.send("ToDo_App Backend is Running...");
 });
-
-const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

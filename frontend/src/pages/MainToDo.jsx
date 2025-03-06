@@ -42,7 +42,7 @@ const MainToDo = () => {
       dueDate: new Date().toISOString(),
     };
     try {
-      const addedTask = await createTask(newTask, user.googleAccessToken);
+      const addedTask = await createTask(newTask);
       dispatch(addTask(addedTask));
       setTaskData({ title: "", description: "", priority: "Medium" });
       alert("Task added successfully!");

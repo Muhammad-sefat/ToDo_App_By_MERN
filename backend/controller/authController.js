@@ -105,7 +105,7 @@ exports.googleAuthCallback = (req, res, next) => {
     { session: false },
     async (err, user, info) => {
       if (err || !user) {
-        return res.redirect("https://todoapp-frontend-chi.vercel.app");
+        return res.redirect("http://localhost:5173");
       }
       // Generate JWT Token
       const token = generateToken(user._id);
@@ -117,7 +117,7 @@ exports.googleAuthCallback = (req, res, next) => {
 
       // Send token in the URL instead of cookies
       res.redirect(
-        `https://todoapp-frontend-chi.vercel.app/?token=${token}&user=${userData}&googleAccessToken=${info.access_token}&googleRefreshToken=${info.refresh_token}`
+        `http://localhost:5173/?token=${token}&user=${userData}&googleAccessToken=${info.access_token}&googleRefreshToken=${info.refresh_token}`
       );
     }
   )(req, res, next);
