@@ -4,20 +4,6 @@ const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { generateToken } = require("../utils/jsonwebtoken");
 const speakeasy = require("speakeasy");
-const QRCode = require("qrcode");
-
-// Promisify QRCode.toDataURL
-// const generateQRCode = (otpauth_url) => {
-//   return new Promise((resolve, reject) => {
-//     QRCode.toDataURL(otpauth_url, (err, data_url) => {
-//       if (err) {
-//         reject(err);
-//       } else {
-//         resolve(data_url);
-//       }
-//     });
-//   });
-// };
 
 exports.register = async (req, res) => {
   try {

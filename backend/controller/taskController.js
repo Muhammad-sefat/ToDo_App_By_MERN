@@ -1,25 +1,10 @@
 const Task = require("../models/task");
 const { google } = require("googleapis");
-const { OAuth2 } = google.auth;
-
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = "http://localhost:5000/api/auth/google/callback";
 
 // Create Task
 exports.createTask = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      dueDate,
-      status,
-      priority,
-      email,
-      googleAccessToken,
-    } = req.body;
-
-    console.log(googleAccessToken);
+    const { title, description, dueDate, status, priority, email } = req.body;
 
     const task = new Task({
       email,

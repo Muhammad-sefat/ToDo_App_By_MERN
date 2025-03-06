@@ -40,4 +40,4 @@ app.get("/", (req, res) => {
   res.send("ToDo_App Backend is Running...");
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+module.exports = app;
