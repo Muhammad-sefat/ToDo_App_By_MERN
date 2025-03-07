@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const corsOptions = {
-  origin: ["https://todoapp-frontend-chi.vercel.app", "http://localhost:5173"],
+  origin: ["http://localhost:5173"],
   credentials: true,
   optionsSuccessStatus: 200,
 };
@@ -40,4 +40,7 @@ app.get("/", (req, res) => {
   res.send("ToDo_App Backend is Running...");
 });
 
-module.exports = app;
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on ${PORT}`);
+});
