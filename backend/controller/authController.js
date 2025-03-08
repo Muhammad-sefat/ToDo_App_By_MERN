@@ -3,46 +3,22 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const { generateToken } = require("../utils/jsonwebtoken");
-const speakeasy = require("speakeasy");
 
 exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    let user = await User.findOne({ email });
 
-    if (user) return res.status(400).json({ msg: "User already exists" });
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate Google Authenticator Secret Key
-    const secret = speakeasy.generateSecret({ name: `TodoApp (${email})` });
+    const user = await User.create({ name, email, password: hashedPassword });
 
-    // Create new user
-    user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      twoFASecret: secret.base32,
-    });
-    await user.save();
-
-    // Generate token
-    const token = generateToken(user._id);
-
-    // Generate QR Code for Google Authenticator
-    const data_url = await generateQRCode(secret.otpauth_url);
-
-    // Send user data and QR code
     res.status(201).json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
-      token,
-      qrCode: data_url,
+      user: { _id: user._id, name: user.name, email: user.email },
+      token: generateToken(user._id),
     });
   } catch (error) {
     console.error("Registration Error:", error);

@@ -11,6 +11,8 @@ const Register = () => {
     email: "",
     password: "",
   });
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -21,13 +23,17 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
     try {
       await dispatch(registerUser(formData));
       alert("Registered successfully");
-
       navigate("/main-todo");
     } catch (err) {
       alert("Registration failed");
+      setError(err.response?.data?.msg || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,6 +43,7 @@ const Register = () => {
         <h2 className="text-2xl font-bold text-white text-center mb-4">
           Register
         </h2>
+        {error && <p className="text-red-400 text-center">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -64,9 +71,14 @@ const Register = () => {
           />
           <button
             type="submit"
-            className="w-full bg-[#a032bf] hover:bg-[#5f1c72] text-white font-bold py-3 rounded-lg transition duration-300"
+            disabled={loading}
+            className={`w-full text-white font-bold py-3 rounded-lg transition duration-300 ${
+              loading
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-[#a032bf] hover:bg-[#5f1c72]"
+            }`}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
 
           <button
